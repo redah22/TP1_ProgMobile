@@ -87,46 +87,72 @@ class _ListeTachesState extends State<ListeTaches> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mes tâches')),
-      body: Column(
-        children: [
-          // En-tête fixe : compteur + filtre
-          _Entete(
-            nbAFaire: _nbAFaire,
-            filtre: _filtre,
-            onFiltreChange: (f) => setState(() => _filtre = f),
-          ),
-          // Corps : liste ou message si vide
-          Expanded(
-            child: visibles.isEmpty
-                ? Center(
-                    child: Text(switch (_filtre) {
-                      Filtre.toutes => 'Aucune tâche',
-                      Filtre.aFaireSeulement => 'Aucune tâche à faire',
-                      Filtre.faitesSeulement => 'Aucune tâche faite',
-                    }, style: Theme.of(context).textTheme.bodyLarge),
-                  )
-                : ListView.builder(
-                    itemCount: visibles.length,
-                    itemBuilder: (context, i) {
-                      final tache = visibles[i];
-                      return TuileTache(
-                        tache: tache,
-                        aujourdhui: aujourdhui,
-                        onCocher: () => _remplacerTache(
-                          tache.id,
-                          tache.copyWith(faite: !tache.faite),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            children: [
+              // En-tête fixe : compteur + filtre
+              _Entete(
+                nbAFaire: _nbAFaire,
+                filtre: _filtre,
+                onFiltreChange: (f) => setState(() => _filtre = f),
+              ),
+              const SizedBox(height: 8),
+              // Corps : liste ou message si vide
+              Expanded(
+                child: visibles.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.task_alt,
+                              size: 56,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              switch (_filtre) {
+                                Filtre.toutes => 'Aucune tâche',
+                                Filtre.aFaireSeulement =>
+                                  'Aucune tâche à faire',
+                                Filtre.faitesSeulement => 'Aucune tâche faite',
+                              },
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
-                        onOuvrir: () => _ouvrirDetail(tache),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        itemCount: visibles.length,
+                        itemBuilder: (context, i) {
+                          final tache = visibles[i];
+                          return TuileTache(
+                            tache: tache,
+                            aujourdhui: aujourdhui,
+                            onCocher: () => _remplacerTache(
+                              tache.id,
+                              tache.copyWith(faite: !tache.faite),
+                            ),
+                            onOuvrir: () => _ouvrirDetail(tache),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _ouvrirFormulaire,
-        tooltip: 'Ajouter',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Nouvelle tâche'),
       ),
     );
   }
@@ -147,30 +173,76 @@ class _Entete extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        children: [
-          Text(
-            '$nbAFaire à faire',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          SegmentedButton<Filtre>(
-            segments: const [
-              ButtonSegment(value: Filtre.toutes, label: Text('Toutes')),
-              ButtonSegment(
-                value: Filtre.aFaireSeulement,
-                label: Text('À faire'),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Statut des tâches',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$nbAFaire à faire',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<Filtre>(
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                segments: const [
+                  ButtonSegment(
+                    value: Filtre.toutes,
+                    label: Text('Toutes'),
+                    icon: Icon(Icons.list),
+                  ),
+                  ButtonSegment(
+                    value: Filtre.aFaireSeulement,
+                    label: Text('À faire'),
+                    icon: Icon(Icons.radio_button_unchecked),
+                  ),
+                  ButtonSegment(
+                    value: Filtre.faitesSeulement,
+                    label: Text('Faites'),
+                    icon: Icon(Icons.check_circle_outline),
+                  ),
+                ],
+                selected: {filtre},
+                onSelectionChanged: (s) => onFiltreChange(s.first),
               ),
-              ButtonSegment(
-                value: Filtre.faitesSeulement,
-                label: Text('Faites'),
-              ),
-            ],
-            selected: {filtre},
-            onSelectionChanged: (s) => onFiltreChange(s.first),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
